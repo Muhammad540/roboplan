@@ -36,6 +36,8 @@ export CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:${PWD}/install/
 
 build_project roboplan_example_models
 build_project roboplan
+build_project roboplan_hardware_interface
+build_project roboplan_mujoco
 build_project roboplan_simple_ik
 build_project roboplan_oink
 build_project roboplan_toppra
