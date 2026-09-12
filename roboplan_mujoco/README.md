@@ -19,13 +19,19 @@ render frames.
 
 ```bash
 pixi install
-pixi run build_all
-pixi run install_all
+pixi run --environment default build
+pixi run --environment default install
 ```
 
 Pixi installs MuJoCo, GLFW, TinyXML2, and the Python dependencies used for model preparation.
 When using CMake directly, MuJoCo 3.12.0 is fetched automatically if it is not already available;
 the other native dependencies must be installed separately.
+
+Run the complete test suite with:
+
+```bash
+pixi run --environment default test_all
+```
 
 ## Prepare robot models
 
@@ -36,13 +42,13 @@ meshes, preserving materials, and normalizing geometry names.
 Prepare every registered model:
 
 ```bash
-pixi run python roboplan_mujoco/scripts/prepare_urdf.py
+pixi run --environment default python roboplan_mujoco/scripts/prepare_urdf.py
 ```
 
 Or prepare selected models:
 
 ```bash
-pixi run python roboplan_mujoco/scripts/prepare_urdf.py franka
+pixi run --environment default python roboplan_mujoco/scripts/prepare_urdf.py franka
 ```
 
 Generated files are written to `roboplan_example_models/models/mujoco/<robot>/`.
@@ -52,5 +58,6 @@ Generated files are written to `roboplan_example_models/models/mujoco/<robot>/`.
 After preparing the Franka model and building the repository:
 
 ```bash
-./build/roboplan_examples/cpp/mujoco_sim/example_pick_place
+pixi run --environment default \
+  ./build/roboplan_examples/cpp/mujoco_sim/example_pick_place
 ```
