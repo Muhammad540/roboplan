@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 project(roboplan_hardware_interface VERSION 0.6.1)
 
-find_package(roboplan REQUIRED)
+if(NOT TARGET roboplan::roboplan)
+  find_package(roboplan REQUIRED)
+endif()
 find_package(ament_cmake QUIET)
 
 add_library(roboplan_hardware_interface INTERFACE)
+add_library(
+  roboplan_hardware_interface::roboplan_hardware_interface
+  ALIAS roboplan_hardware_interface)
 target_include_directories(roboplan_hardware_interface INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>

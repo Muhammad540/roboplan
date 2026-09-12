@@ -11,8 +11,12 @@ if(WIN32)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-find_package(roboplan REQUIRED)
-find_package(roboplan_hardware_interface REQUIRED)
+if(NOT TARGET roboplan::roboplan)
+  find_package(roboplan REQUIRED)
+endif()
+if(NOT TARGET roboplan_hardware_interface::roboplan_hardware_interface)
+  find_package(roboplan_hardware_interface REQUIRED)
+endif()
 find_package(ament_cmake QUIET)
 
 include(FetchContent)
@@ -51,6 +55,7 @@ add_library(roboplan_mujoco SHARED
   src/mujoco_renderer.cpp
   src/mujoco_simulation.cpp
 )
+add_library(roboplan_mujoco::roboplan_mujoco ALIAS roboplan_mujoco)
 target_include_directories(roboplan_mujoco PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
