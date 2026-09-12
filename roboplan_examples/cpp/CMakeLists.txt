@@ -46,6 +46,10 @@ target_include_directories(example_rrt PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+if(TARGET roboplan_mujoco::roboplan_mujoco)
+    add_subdirectory(mujoco_sim)
+endif()
+
 add_executable(example_cartesian_planning example_cartesian_planning.cpp)
 target_link_libraries(example_cartesian_planning
     roboplan::roboplan

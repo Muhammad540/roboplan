@@ -17,6 +17,7 @@ find_package(roboplan_oink REQUIRED)
 find_package(roboplan_rrt REQUIRED)
 find_package(roboplan_toppra REQUIRED)
 find_package(roboplan_cartesian_planning REQUIRED)
+find_package(roboplan_mujoco QUIET)
 
 # Ament CMake is not immediately required, but we include it at the top so that
 # if it is found we can use it in build testing before requiring a
