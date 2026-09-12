@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <variant>
-#include <vector>
+
+#include <Eigen/Core>
+#include <tl/expected.hpp>
 
 namespace roboplan {
     /// @brief Robot state expressed in RoboPlan format
