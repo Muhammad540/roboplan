@@ -190,7 +190,11 @@ void executeTrajectory(MujocoHardwareInterface& hardware, const JointGroupInfo& 
     for (std::size_t i = 0; i < trajectory.times.size(); ++i) {
         command(group.q_indices) = trajectory.positions[i];
         command[finger_index] = finger_position;
+
+        // The hardware interface maps this RoboPlan configuration to the corresponding MuJoCo position actuators.
         throwIfError(hardware.writePositionCommand(command), "Failed to write trajectory command");
+
+        // Applications own the control loop: advance MuJoCo until the next trajectory sample while rendering at a lower rate.
         stepUntil(hardware, start_time + trajectory.times[i], carrying, renderer, wall_start, next_render_time);
     }
 }
@@ -209,6 +213,8 @@ int main() {
     const auto source_model_dir = models_dir / "franka_robot_model";
     const auto urdf = mujoco_model_dir / "fr3.urdf";
     const auto srdf = source_model_dir / "fr3.srdf";
+
+    // RoboPlan owns the planning representation: robot kinematics, semantic groups, collision geometry, and the current planning state.
     auto scene = std::make_shared<Scene>("pick_and_place", urdf, srdf,std::vector<std::filesystem::path>{example_models::get_package_share_dir(), mujoco_model_dir},source_model_dir / "fr3_config.yaml");
 
     const auto group = scene->getJointGroupInfo(kGroup).value();
@@ -222,6 +228,7 @@ int main() {
     scene->setJointPositions(home);
     Eigen::VectorXd planning_q = home;
 
+    // Plan the pick and place motion with RoboPlan before creating the simulator. The resulting trajectories contain RoboPlan joint vectors.
     std::cout << "Planning home -> pick -> place..." << std::endl;
     const auto approach = planCartesian(scene, {pose({world.pick_position.x(), world.pick_position.y(), 0.44}), pose(world.pick_position + Eigen::Vector3d(0.0, 0.0, 0.002))});
     advancePlanningState(*scene, group, approach, planning_q, finger_index, kOpenGripper);
@@ -229,21 +236,28 @@ int main() {
     setPlanningBlock(*scene, world, true);
     const auto carry = planCartesian(scene, {pose({world.pick_position.x(), world.pick_position.y(), 0.62}), pose({world.place_position.x(), world.place_position.y(), 0.62}), pose(world.place_position + Eigen::Vector3d(0.0, 0.0, 0.008))});
 
+    // Import the robot URDF into an editable MuJoCo model and attach it to the example MJCF scene.
     auto builder = MujocoModelBuilder::fromUrdf(urdf, example_models::get_package_models_dir() / "mujoco" / "scene.xml").value();
     builder.spec().option.timestep = 0.001;
     builder.spec().option.integrator = mjINT_IMPLICITFAST;
     throwIfError(builder.addCollisionExclusionsFromSrdf(srdf), "Failed to add collision exclusions");
 
+    // Add MuJoCo position servos only for joints commanded by this example.
     auto controlled_joints = group.joint_names;
     controlled_joints.emplace_back("fr3_finger_joint1");
     throwIfError(builder.addPositionServos(controlled_joints, {.kp = 4000.0, .kv = 300.0, .max_force = 100.0}), "Failed to add position servos");
+
+    // The simulation world is MuJoCo specific and remains separate from the collision geometry used by RoboPlan during planning.
     addMujocoWorld(builder.spec(), world);
 
+    // Compile the editable model and transfer ownership of the simulation to the hardware interface. The interface also builds the joint mapping between RoboPlan vectors and MuJoCo qpos, qvel, and actuator arrays.
     auto hardware = MujocoHardwareInterface::create(builder.compile().value(), *scene, controlled_joints).value();
 
+    // Initialize MuJoCo from the same full configuration used by RoboPlan.
     throwIfError(hardware.reset(home), "Failed to reset MuJoCo hardware interface");
     Eigen::VectorXd command = home;
 
+    // The renderer observes the simulation owned by the hardware interface.
     auto renderer = MujocoRenderer::create(hardware.simulation(), "RoboPlan MuJoCo pick and place").value();
     MujocoPlanningOverlay overlay;
     overlay.ghost_root_bodies = {kRootBody};
